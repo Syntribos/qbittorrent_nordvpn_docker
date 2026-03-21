@@ -1,0 +1,51 @@
+services:
+  nordvpn-box:
+    build: .
+    container_name: nordvpn-full
+    env_file:
+      - .env
+    hostname: withvpn
+    tty: true
+    stdin_open: true
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./entrypoint.sh:/entrypoint.sh
+      - ./heartbeat.py:/heartbeat.py
+      - ./start_nord.py:/start_nord.py
+      - ./utils:/utils
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
+    ports:
+      - "1080:1080"
+      - "8080:8080"
+      - "6881:6881"
+      - "6881:6881/udp"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "ip route show table 205 | grep -q 10.5.0.1"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 30s
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    network_mode: "container:nordvpn-full"
+    environment:
+      - PUID
+      - PGID
+      - TZ
+      - UMASK_SET
+      - WEBUI_PORT
+      - TORRENTING_PORT
+    volumes:
+      - ${DOWNLOADS_PATH}:/downloads
+      - ./qbittorrent-config:/config
+    restart: unless-stopped
+    depends_on:
+      nordvpn-box:
+        condition: service_healthy

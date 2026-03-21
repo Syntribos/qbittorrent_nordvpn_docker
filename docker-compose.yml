@@ -10,7 +10,6 @@ services:
     cap_add:
       - NET_ADMIN
     volumes:
-      - ./entrypoint.sh:/entrypoint.sh
       - ./heartbeat.py:/heartbeat.py
       - ./start_nord.py:/start_nord.py
       - ./utils:/utils
@@ -27,9 +26,8 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "ip route show table 205 | grep -q 10.5.0.1"]
       interval: 5s
-      timeout: 3s
+      timeout: 5s
       retries: 60
-      start_period: 30s
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest

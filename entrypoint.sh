@@ -6,7 +6,7 @@ usermod -aG nordvpn root
 
 if [[ -z "$NORD_TOKEN" ]]; then
     echo ".env must contain a NORD_TOKEN for authentication"
-    return 1
+    exit 1
 fi
 
 if [[ -z "$CONNECT_RETRIES" ]]; then

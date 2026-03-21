@@ -85,7 +85,8 @@ class LivenessTaskManager:
                 if result.return_code is not ReturnCode.SUCCESS:
                     failures.append(f"Task {key} FAILED with result {result.return_code} and message {result.value()}")
                     continue
-                successes.append(f"Task {key} succeeded with message {result.value()}")
+                message = f" with message {result.value()}" if result.value() else ""
+                successes.append(f"Task {key} succeeded{message}")
 
             if failures:
                 return ReturnObject(ReturnCode.FAILURE, "\n".join(successes + failures))
@@ -113,7 +114,7 @@ class LivenessChecker(CommandRunner):
             task_timeout: int = 240,
             sleep_seconds: int = 300,
             log_commands: bool = False,
-            log_results: bool = True
+            log_results: bool = False
     ):
         self.nord_manager = nord_manager
         self.failures_per_nord_kick = failures_per_nord_kick

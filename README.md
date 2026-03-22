@@ -5,4 +5,5 @@
 2. Run via `docker compose up [-d] [--build]`
 
 ### TODO
+* Implement proper logging with option for stdout or persistent file (in progress)
 * Killswitch *should* work, but adding redundancy via comparing the result of a `curl ifconfig.me` from inside and outside the container to ensure they're different could be a nice to have

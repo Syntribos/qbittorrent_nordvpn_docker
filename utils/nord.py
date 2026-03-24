@@ -4,12 +4,17 @@ from utils.command_runner import CommandRunner
 from utils.custom_types import NordException
 from utils.return_value import ReturnCode, ReturnObject, StdResult
 
+DEFAULT_DEFAULT_ROUTE: str = "default via 172.18.0.1 dev eth0"
+
 
 class Nord(CommandRunner):
     def try_login(self, token: str) -> ReturnObject[StdResult]:
-        result = self.run_command("/etc/init.d/nordvpn start")
-        if result.return_code != ReturnCode.SUCCESS:
-            raise Exception("Couldn't start nord")
+        self.run_command("/etc/init.d/nordvpn start").raise_if_err(
+            exception_type=NordException,
+            default_message="Couldn't start nord.",
+            prepend_default_message=True
+        )
+
         time.sleep(5)
         print("Running command nordvpn login --token [HIDDEN]")
         return self.run_command(f"nordvpn login --token {token}", log_command=False)
@@ -46,6 +51,7 @@ class Nord(CommandRunner):
         _ = self.run_command("nordvpn set killswitch on")
 
         if kill_network_until_connection_established:
+            default_route = self._get_default_route()
             _ = self.run_command("ip route del default")
 
         # Wait for nordlynx to come back up
@@ -59,7 +65,16 @@ class Nord(CommandRunner):
                 _ = self.run_command("ip route del default table 205 2>/dev/null || true")
                 _ = self.run_command("ip route add default via 10.5.0.1 dev nordlynx table 205")
                 if kill_network_until_connection_established:
-                    _ = self.run_command("ip route add default via 172.18.0.1 dev eth0")
+                    _ = self.run_command(f"ip route add {default_route}")
                 return
             time.sleep(5)
-        raise Exception("nordlynx did not come back up after reconnect. Killing self to trigger restart.")
+        raise NordException("nordlynx did not come back up after reconnect. Killing self to trigger restart.")
+
+    def _get_default_route(self) -> str:
+        default_route_result = self.run_command("ip route show default")
+        default_route_result.raise_if_err(
+            exception_type=NordException,
+            default_message="Could not determine default ip route.",
+            prepend_default_message=True
+        )
+        return default_route_result.out_str() or DEFAULT_DEFAULT_ROUTE

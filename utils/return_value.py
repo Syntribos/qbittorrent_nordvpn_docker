@@ -1,5 +1,6 @@
 from enum import IntEnum
 from io import BufferedReader
+from os import linesep
 from typing import IO, Generic, Optional, TypeVar
 
 from utils.custom_types import Output, StdBytes, StdStr
@@ -91,12 +92,19 @@ class ReturnObject(Generic[T]):
         self,
         *,
         exception_type: Optional[type[Exception]] = Exception,
+        prepend_default_message: bool = True,
         force_default_message: bool = False,
         default_message: str = ""
     ):
         if self.return_code is ReturnCode.SUCCESS:
             return
-        msg = default_message if force_default_message else self.err_str(default_message)
+        if prepend_default_message:
+            err = self.err_str(default_message)
+            err = linesep + err if err else ""
+            msg = default_message + err
+        else:
+            msg = default_message if force_default_message \
+            else self.err_str(default_message)
         if not exception_type:
             exception_type = Exception
         raise exception_type(msg)

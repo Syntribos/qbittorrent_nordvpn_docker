@@ -22,7 +22,9 @@ def init_nord(login_token: str, retries: int) -> int:
     result.raise_if_err(exception_type=NordException, default_message="Couldn't log into Nord.")
 
     result = nord.try_connect(retries)
-    result.raise_if_err(exception_type=NordException, default_message=f"Couldn't connect to Nord after {retries + 1} tries.")
+    result.raise_if_err(
+        exception_type=NordException, default_message=f"Couldn't connect to Nord after {retries + 1} tries."
+    )
     print("Finished Nord setup.")
     return 0
 

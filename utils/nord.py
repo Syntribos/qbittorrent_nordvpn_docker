@@ -31,6 +31,7 @@ class Nord(CommandRunner):
         return ReturnObject(ReturnCode.SUCCESS)
 
     def reset_nord(self, do_disconnect: bool = True, connect_retries: int = 0, kill_network_until_connection_established: bool = False) -> None:
+        default_route = DEFAULT_DEFAULT_ROUTE
         print(f"{'Resetting' if do_disconnect else 'Starting'} Nord...")
         if do_disconnect:
             _ = self.run_command("nordvpn disconnect")

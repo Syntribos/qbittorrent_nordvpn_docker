@@ -103,8 +103,7 @@ class ReturnObject(Generic[T]):
             err = linesep + err if err else ""
             msg = default_message + err
         else:
-            msg = default_message if force_default_message \
-            else self.err_str(default_message)
+            msg = default_message if force_default_message else self.err_str(default_message)
         if not exception_type:
             exception_type = Exception
         raise exception_type(msg)

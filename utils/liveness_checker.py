@@ -4,7 +4,6 @@ import socket
 import struct
 from datetime import datetime
 from multiprocessing import Manager, Process
-from multiprocessing.managers import DictProxy
 from time import sleep
 from typing import Callable, Optional, TypeAlias
 
@@ -15,6 +14,8 @@ from utils.return_value import ReturnCode, ReturnObject
 PING_COMMAND = "ping -c 1 -w 1 8.8.8.8"
 PING_REGEX_PATTERN = "transmitted, (\\d+) received"
 PING_REGEX = re.compile(PING_REGEX_PATTERN)
+IMPOSSIBLE_ERROR = "This should never happen as code should handle None results before this point. \
+Hopefully this is just for type checking!"
 
 TRACKERS = [
     ("open.tracker.cl", 1337),
@@ -48,7 +49,7 @@ class LivenessTaskManager:
         self.liveness_tasks = liveness_tasks
         self.task_timeout = task_timeout
         self._manager = Manager()
-        self.liveness_results: DictProxy[str, LivenessResult] = self._manager.dict()
+        self.liveness_results = self._manager.dict()
         self._running = False
 
     def run_liveness_check(self, log_commands: bool) -> ReturnObject[str]:
@@ -81,7 +82,7 @@ class LivenessTaskManager:
             for key, result in self.liveness_results.items():
                 if result is None:
                     self._running = False
-                    raise Exception("This should never happen as code should handle None results before this point. Hopefully this is just for type checking!")
+                    raise Exception(IMPOSSIBLE_ERROR)
                 if result.return_code is not ReturnCode.SUCCESS:
                     failures.append(f"Task {key} FAILED with result {result.return_code} and message {result.value()}")
                     continue
@@ -180,7 +181,10 @@ class LivenessChecker(CommandRunner):
         if str(matches[0]) == "1":
             result = ReturnObject(ReturnCode.SUCCESS)
         else:
-            result = ReturnObject(ReturnCode.FAILURE, f"PING command did not complete correctly with following output:\n{ping_output}")
+            result = ReturnObject(
+                ReturnCode.FAILURE,
+                f"PING command did not complete correctly with following output:\n{ping_output}"
+            )
         manager.set_task_result(task_key, result)
 
     def _check_tables(self, manager: LivenessTaskManager, task_key: str, log_commands: bool) -> None:
@@ -197,7 +201,10 @@ class LivenessChecker(CommandRunner):
             manager.set_task_result(task_key, cmd_result)
             return
 
-        cmd_result = ReturnObject(ReturnCode.FAILURE, f"Expected value [{expected_ip}] not found in result str: [{result.out_str()}]")
+        cmd_result = ReturnObject(
+            ReturnCode.FAILURE,
+            f"Expected value [{expected_ip}] not found in result str: [{result.out_str()}]"
+        )
         manager.set_task_result(task_key, cmd_result)
         return
 
@@ -213,7 +220,8 @@ class LivenessChecker(CommandRunner):
         result = ReturnObject(ReturnCode.FAILURE, "Couldn't connect to any trackers.")
         manager.set_task_result(task_key, result)
 
-    def _send_to(self, tracker: tuple[str, int]) -> bool:
+    @staticmethod
+    def _send_to(tracker: tuple[str, int]) -> bool:
         sock = None
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
